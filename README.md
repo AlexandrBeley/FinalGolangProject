@@ -28,3 +28,4 @@ http://localhost:1229/data/?token=<Ваш_токен>
 http://localhost:1229/times/?timePlus=300ms&timeMinus=100s&timeDivis=15s&timeMult=11s
 timePlus - время сложения, timeMinus - время вычитания, timeDivis - время деления, timeMult - время умножения
 
+@Jdoalak
