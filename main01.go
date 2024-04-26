@@ -14,8 +14,12 @@ import (
 )
 
 type GetInf struct {
-    User        string
+    UserName    string
     ID          int
+}
+type User struct {
+    UserName    string
+    Password    string
 }
 type Info struct {
     CountStr    string
@@ -35,6 +39,7 @@ const ipStr = "1229"
 
 var TimePlus, TimeMinus, TimeMult, TimeDivis time.Duration
 var Information []Info
+var Users []User
 var ch []GetInf
 var mu sync.Mutex
 
@@ -59,6 +64,32 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
  }
 func UserTokenHandler(w http.ResponseWriter, r *http.Request) {
     stUser := r.URL.Query().Get("user")
+    stPassword := r.URL.Query().Get("password")
+    us := User{stUser, stPassword}
+    for i := range Users {
+        if Users[i] == us {
+            token, err := CreateToken(stUser)
+            if err != nil {
+                fmt.Fprintln(w, err)
+                return  
+            }
+            fmt.Fprintf(w, "Токен для пользователя %s:\n%s", stUser, token)
+            return
+        }
+    }
+    fmt.Fprintf(w, "Неверный пароль или имя пользователя")
+ }
+func RegisterHandler(w http.ResponseWriter, r *http.Request) {
+    stUser := r.URL.Query().Get("user")
+    stPassword := r.URL.Query().Get("password")
+    us := User{stUser, stPassword}
+    for i := range Users {
+        if Users[i] == us {
+            fmt.Fprintln(w, "Пользователь существует")
+            return
+        }
+    }
+    Users = append(Users, us)
     token, err := CreateToken(stUser)
     if err != nil {
         fmt.Fprintln(w, err)
@@ -112,7 +143,7 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintln(w, fmt.Errorf("Неправильный токен или ID"))
         return
     } 
-    fmt.Fprintf(w, "ID: %d\nValue: %f\nCode: %s\nProcessTime: %s\nString: %s", id, info_.Value, info_.Error, info_.ProcessTime, info_.CountStr)
+    fmt.Fprintf(w, "ID: %d\nValue: %d\nCode: %s\nProcessTime: %s\nString: %s", id, int(info_.Value), info_.Error, info_.ProcessTime, info_.CountStr)
     
  }
 func DataHandler(w http.ResponseWriter, r *http.Request) {
@@ -126,7 +157,7 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
             continue
         }
         mu.Lock()
-        fmt.Fprintf(w, "ID: %d Value: %f Code: %s ProcessTime: %s String: %s\n", Information[i].ID, Information[i].Value, Information[i].Error, Information[i].ProcessTime,Information[i].CountStr)
+        fmt.Fprintf(w, "ID: %d Value: %d Code: %s ProcessTime: %s String: %s\n", Information[i].ID, int(Information[i].Value), Information[i].Error, Information[i].ProcessTime,Information[i].CountStr)
         mu.Unlock()
     }  
     mu.Lock()
@@ -147,7 +178,6 @@ func main() {
     TimeMinus = time.Second
     TimeDivis = time.Second
     TimeMult = time.Second
-    /*file_path := "C:\\Users\\aleks\\codeing\\go\\code\\ЯндексЛицей\\2\\финальная_задача\\data.txt"
     _, err := os.ReadFile(file_path)
     if err != nil {
         fmt.Println(err)
@@ -164,19 +194,21 @@ func main() {
     info_ := http.HandlerFunc(InfoHandler)
     data_ := http.HandlerFunc(DataHandler)
     token_ := http.HandlerFunc(UserTokenHandler)
+    reg_ := http.HandlerFunc(RegisterHandler)
     
 	mux.Handle("/", Meine(main_))
     mux.Handle("/times/", Meine(time_))
     mux.Handle("/get/", Meine(info_))
     mux.Handle("/data/", Meine(data_))
-    mux.Handle("/token/", Meine(token_))
+    mux.Handle("/login/", Meine(token_))
+    mux.Handle("/register/", Meine(reg_))
 
     go func(){
         for {
             mu.Lock()
             if len(ch) > 0 {
                 a := ch[0].ID
-                b := ch[0].User
+                b := ch[0].UserName
                 info_, err := GetInfo(b, a)
                 if err != nil {
                     fmt.Println("not find")
@@ -184,13 +216,6 @@ func main() {
                     fmt.Println(b, a)
                     go CountProcessNew(info_)
                 }
-                /*
-                for i := 0; i < len(Information); i += 1 {
-                    if Information[i].UserName == b && Information[i].ID == a {
-                        go CountProcessNew(&Information[a])
-                        break
-                    }
-                }*/
                 ch = ch[1:]
             }
             mu.Unlock()
@@ -275,11 +300,9 @@ func GetTime(st string, inf *Info) (time.Duration, bool) {
     if st == "*" {
         return inf.TimeMult, true
     }
-    if st == "\/" {
+    if st == "/" {
         return inf.TimeDivis, true
     }
+    fmt.Println(st)
     return time.Second, false
- }
-/*
-    go run "C:\Users\aleks\codeing\go\code\ЯндексЛицей\final_task_main\cmd\server\main01.go"
-*/
+}
