@@ -41,7 +41,7 @@ type Info struct {
 
 const hmacSampleSecret = "SuPeR-SeCrEt-SiGnAtUrE"
 const ipStr = "1229"
-const dbPath = "C:/dataBse/storefs.db"
+const dbPath = "C:/storefs.db"
 
 var TimePlus, TimeMinus, TimeMult, TimeDivis time.Duration
 var Information []Info
